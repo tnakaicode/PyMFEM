@@ -75,7 +75,8 @@ elif platform == "darwin":
     dylibext = '.dylib'
 elif platform == "win32":
     # Windows...
-    assert False, "Windows is not supported yet. Contribution is welcome"
+    dylibext = '.pyd'
+    #assert False, "Windows is not supported yet. Contribution is welcome"
 
 use_metis_gklib = False
 
