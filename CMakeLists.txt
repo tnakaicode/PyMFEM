@@ -8,6 +8,16 @@ set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
+# CMP0078: UseSWIG generates standard target names.
+if (POLICY CMP0078)
+    cmake_policy(SET CMP0078 OLD)
+endif(POLICY CMP0078)
+
+# CMP0086: UseSWIG honors SWIG_MODULE_NAME via -module
+if (POLICY CMP0086)
+    cmake_policy(SET CMP0086 OLD)
+endif(POLICY CMP0086)
+
 if(NOT DEFINED PYTHONOCC_BUILD_TYPE)
   set(PYTHONOCC_BUILD_TYPE "Release" CACHE STRING "Build type") # By default set release build
 endif(NOT DEFINED PYTHONOCC_BUILD_TYPE)
@@ -26,7 +36,7 @@ endmacro(option_with_default OPTION_NAME OPTION_STRING OPTION_DEFAULT)
 #################
 # Build options #
 #################
-# include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/OCE_Modules.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MFEM_Modules.cmake)
 # add an option to choose toolkits to compile
 option_with_default(SWIG_HIDE_WARNINGS "Check this option if you want a less verbose swig output." ON)
 
@@ -138,12 +148,27 @@ set(CMAKE_SWIG_OUTDIR ${LIBRARY_OUTPUT_PATH})
 ##################
 # Common Module  #
 ##################
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/${mfen/common})
-set(FILE ${SWIG_FILES_PATH}/${OCE_MODULE}.i)
-set_source_files_properties(${FILE} PROPERTIES CPLUSPLUS ON)
-swig_add_library (${OCE_MODULE} LANGUAGE python SOURCES ${FILE} TYPE MODULE)
-swig_link_libraries(${OCE_MODULE} ${OCE_MODEL_LIBRARIES} Python3::Module)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/mfem/common)
+foreach(MFEM_MODULE ${MFEM_COMMON})
+    set(FILE ${CMAKE_CURRENT_SOURCE_DIR}/mfem/common/${MFEM_MODULE}.i)
+    set_source_files_properties(${FILE} PROPERTIES CPLUSPLUS ON)
+    swig_add_library (${MFEM_MODULE} LANGUAGE python SOURCES ${FILE} TYPE MODULE)
+    swig_link_libraries(${MFEM_MODULE} ${OCE_MODEL_LIBRARIES} Python3::Module)
+    #message(${MFEM_MODULE})
+endforeach(MFEM_MODULE)
 
+##################
+# _Ser Module    #
+##################
+#file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/mfem/_ser)
+#foreach(MFEM_MODULE ${MFEM_SER})
+#    set(FILE ${CMAKE_CURRENT_SOURCE_DIR}/mfem/_ser/${MFEM_MODULE}.i)
+#    set_source_files_properties(${FILE} PROPERTIES CPLUSPLUS ON)
+#    #swig_add_library (${MFEM_MODULE} LANGUAGE python SOURCES ${FILE} TYPE MODULE)
+#    swig_link_libraries(${MFEM_MODULE} ${OCE_MODEL_LIBRARIES} Python3::Module)
+#    #message(${MFEM_MODULE})
+#endforeach(MFEM_MODULE)
+#
 ################
 # Installation #
 ################

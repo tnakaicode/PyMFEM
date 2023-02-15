@@ -18,8 +18,8 @@ LIST(APPEND MFEM_COMMON
 	io_stream_typemap
 	lininteg_ext
 	memorytype_typemap
-	mfem_config
-	numba_coefficient
+#	mfem_config
+#	numba_coefficient
 	numpy_int_typemap
 	object_array_typemap
 	operator_ptr_typemap
