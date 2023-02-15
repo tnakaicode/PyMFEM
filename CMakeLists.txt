@@ -8,12 +8,45 @@ set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
+if(NOT DEFINED PYTHONOCC_BUILD_TYPE)
+  set(PYTHONOCC_BUILD_TYPE "Release" CACHE STRING "Build type") # By default set release build
+endif(NOT DEFINED PYTHONOCC_BUILD_TYPE)
+set(CMAKE_BUILD_TYPE ${PYTHONOCC_BUILD_TYPE} CACHE INTERNAL "Build type, immutable" FORCE)
+
+set(BUILD_SHARED_LIBS ON)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+#############################
+# Option_With_Default macro #
+#############################
+macro(option_with_default OPTION_NAME OPTION_STRING OPTION_DEFAULT)
+  option(${OPTION_NAME} ${OPTION_STRING} ${OPTION_DEFAULT})
+endmacro(option_with_default OPTION_NAME OPTION_STRING OPTION_DEFAULT)
+
+#################
+# Build options #
+#################
+# include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/OCE_Modules.cmake)
+# add an option to choose toolkits to compile
+option_with_default(SWIG_HIDE_WARNINGS "Check this option if you want a less verbose swig output." ON)
+
+############
+# Python 3 #
+############
+find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+include_directories(${Python3_NumPy_INCLUDE_DIRS})
+message(STATUS "Numpy include directory: ${Python3_NumPy_INCLUDE_DIRS}")
+#set(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -DBUILD_MESHDS_NUMPY)
+message(STATUS "Python3 interpreter:" ${Python3_EXECUTABLE})
+message(STATUS "Python include directory: ${Python3_INCLUDE_DIRS}")
+message(STATUS "Python library release: ${Python3_LIBRARY_RELEASE}")
+
 ########
 # SWIG #
 ########
 find_package(SWIG 4.0.2 REQUIRED)
 include(${SWIG_USE_FILE})
-set(SWIG_FILES_PATH src/SWIG_files/wrapper)
+set(SWIG_FILES_PATH "${mfem/common};${mfem/_ser}")
 set(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -fvirtual -py3)
 if(SWIG_HIDE_WARNINGS)
   message(STATUS "Disabled SWIG warnings")
@@ -43,7 +76,7 @@ else(MFEM_INCLUDE_PATH)
   if(MFEM_FOUND)
     message(STATUS "MFEM version found: " ${MFEM_MAJOR_VERSION} "." ${MFEM_MINOR_VERSION} "." ${MFEM_MAINTENANCE_VERSION})
     message(STATUS "MFEM include directory: " ${MFEM_INCLUDE_DIR})
-    message(STATUS "MFEM binary directory: " ${MFEM_BINARY_DIR})
+    message(STATUS "MFEM library directory: " ${MFEM_LIBRARY_DIR})
     include_directories(${MFEM_INCLUDE_DIR})
   else(MFEM_FOUND)  # set default paths
     set(MFEM_INCLUDE_PATH /usr/local/include/MFEM CACHE PATH "MFEM include path")
@@ -75,7 +108,7 @@ message(STATUS "PyMFEM modules will be installed to: ${PyMFEM_INSTALL_DIRECTORY}
 ################
 # Headers path #
 ################
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/SWIG_files/headers)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers)
 
 ################################################
 # Define output path for generated libraries:  #
@@ -101,6 +134,15 @@ else(WIN32)
   set(LIBRARY_OUTPUT_PATH ${PLATFORM}/${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}-${BIT})
 endif(WIN32)
 set(CMAKE_SWIG_OUTDIR ${LIBRARY_OUTPUT_PATH})
+
+##################
+# Common Module  #
+##################
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/${mfen/common})
+set(FILE ${SWIG_FILES_PATH}/${OCE_MODULE}.i)
+set_source_files_properties(${FILE} PROPERTIES CPLUSPLUS ON)
+swig_add_library (${OCE_MODULE} LANGUAGE python SOURCES ${FILE} TYPE MODULE)
+swig_link_libraries(${OCE_MODULE} ${OCE_MODEL_LIBRARIES} Python3::Module)
 
 ################
 # Installation #
